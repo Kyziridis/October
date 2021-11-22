@@ -15,10 +15,6 @@ from data_objects import DesiredModel
 
 
 class Model:
-    # loan_default == 1 : Will not pay failure to pay the dept
-    # loan_default == 0 : Will pay
-    # FP = precision == model predict =1 but true = 0
-    # FN = thelw liga, == model.predict =0 but true =1
     def __init__(self, desired_model: str = 'MLP'):
         self.desired_model = DesiredModel(desired_model)
         self.models = {'MLP': [MLPClassifier, {'hidden_layer_sizes': (100), 'max_iter': 300, 'random_state': 1}],
@@ -26,6 +22,14 @@ class Model:
                        'SVM': [SVC, {'random_state': 666}]}
 
     def train(self, x_train: pd.DataFrame, y_train: pd.DataFrame, oversampling: bool):
+        """
+        This function trains the chosen model.
+
+        :param x_train: regrssors dataframe
+        :param y_train: target dataframe
+        :param oversampling: boolean
+        :return: a fitted classifer
+        """
         balanced_x, y_train = self._handle_imbalanced_data(x_train, y_train, over=oversampling)
         self.data_scaler_fit(balanced_x)
         x_train_scaled = self._scale(balanced_x)
@@ -40,6 +44,14 @@ class Model:
 
     @staticmethod
     def _handle_imbalanced_data(x: pd.DataFrame, y: pd.DataFrame, over: bool = True):
+        """
+        Handles the imbalanced data by applying over/under sampling
+
+        :param x: regressors dataframe
+        :param y: target dataframe
+        :param over: bool
+        :return: balanced x and y
+        """
         if not over:
             print('Performing undersampling')
             undersample = RandomUnderSampler(sampling_strategy='majority', random_state=9634)
@@ -51,10 +63,23 @@ class Model:
         return x_train, y_train
 
     def predict(self, input_vector: np.ndarray):
+        """
+        Predict function loads the trained model and predicts the input data
+        :param input_vector: input numpy array for prediction
+        :return: predicted outcome
+        """
         loaded_model = self.load_model(self.desired_model.value)
         return loaded_model.predict(input_vector)
 
-    def evaluate(self, x_test: pd.DataFrame, y_test: pd.DataFrame, scale: bool = False):
+    def evaluate(self, x_test: pd.DataFrame, y_test: pd.DataFrame):
+        """
+        Evaluation function calls the predict fucntion on the chosen trained model
+        evaluates the data on the testset for inference
+
+        :param x_test: regressors testset dataframe
+        :param y_test: targets testset dataframe
+        :return: Dictionary with evaluation metrics
+        """
         x_test_scaled = self._scale(x_test)
         data_for_testing = np.concatenate([x_test_scaled, x_test[EXCLUDE_FROM_SCALING]], axis=1)
         test_prediction = self.predict(input_vector=data_for_testing)
@@ -68,6 +93,12 @@ class Model:
 
     @staticmethod
     def data_scaler_fit(x: pd.DataFrame, scale_range: tuple = (-2, 2)):
+        """
+        Data scaler performs scaling on input data based on MixMaxScaler from sklearn
+        :param x: input dataframe
+        :param scale_range: tuple with the clipping range for the MinMax Scaler
+        :return: None
+        """
         scaler = MinMaxScaler(feature_range=scale_range)
         x_excluded_columns = x.loc[:, ~x.columns.isin(EXCLUDE_FROM_SCALING)]
         print('Shape for scaling fit: ', x_excluded_columns.shape)

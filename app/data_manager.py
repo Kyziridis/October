@@ -11,6 +11,10 @@ from configuration import COLUMNS_TO_EXCLUDE, KEEP_ID
 
 
 class DataManager:
+    """
+    Class manipulates the data
+
+    """
     def __init__(self, path_to_data: str, response_column_name: str = None):
         self.path_to_data = path_to_data
         self.response_column_name = response_column_name
@@ -25,6 +29,10 @@ class DataManager:
         print(f'All clients unique in dataset : {is_unique_customers}')
 
     def get_preprocessed_data(self):
+        """
+        Calls _preprocess function and returns the preprocessed data
+        :return: preprocessed data
+        """
         preprocessed_data = self._preprocess()
         return preprocessed_data
 
@@ -40,6 +48,13 @@ class DataManager:
         return data[columns_without_id]
 
     def _preprocess(self):
+        """
+        Preprocess applying all essential steps on data
+        Constructs features and log transformations
+        Apply the binning on categorical variables
+        Cleans the data remove nans and excluded columns
+        :return: preprocessed data
+        """
         processed_data = self._transform_data(self.data)
         processed_data = self._make_age_bins(processed_data)
         processed_data = self._handle_employment_type(processed_data)
@@ -79,6 +94,12 @@ class DataManager:
         return data_copy
 
     def split_train_test(self, data: pd.DataFrame, testset_size: float = 0.2):
+        """
+        Train test splitting
+        :param data: dataframe to be splitted
+        :param testset_size: ratio float
+        :return: regressprs train and test, target train and test
+        """
         x, y = self._split_x_y(data)
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=testset_size, random_state=36232)
         return x_train, x_test, y_train, y_test
@@ -99,6 +120,12 @@ class DataManager:
         return data.describe().to_html()
 
     def handle_request_data(self, input_request: RequestInputData):
+        """
+        Handles the input requested data for the predict endpoint.
+        Preprocessed the data in order to feed them in the model.
+        :param input_request: data to be predicted (x data)
+        :return: dataframe ready to be fitted
+        """
         df = pd.DataFrame([input_request.dict()])
         processed_data = self._transform_data(df)
         processed_data = self._make_age_bins(processed_data)
